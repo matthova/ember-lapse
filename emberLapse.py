@@ -3,26 +3,37 @@ import time ## Import 'time' library. Allows us to use 'sleep'
 import requests
 import json
 
-def checkStatus(url, params, photoTaken):
+layer_count = 0
+layers_per_photo = 4
+photoTaken = False
+
+def checkStatus(url, params):
+	global layer_count, layers_per_photo, photoTaken
         r = requests.post(url, params)
-	decoded = json.loads(r.text)
+	decoded = json.loads(r.text.lower())
 	try:
 		state = decoded['response']['state']
 		print state
 		if state == 'exposing':
-			photoTaken = True
-			GPIO.output(7,1)
-			time.sleep(.1)
-			GPIO.output(7,0)
-		elif state == 'delaminating':
+			if photoTaken == False:
+				photoTaken = True
+				print layer_count
+				print layers_per_photo
+				print layer_count % layers_per_photo
+				print ' '
+				if layer_count % layers_per_photo == 0:
+					GPIO.output(7,1)
+					time.sleep(.1)
+					GPIO.output(7,0)
+				layer_count += 1
+		elif state == 'separating':
 			photoTaken = False
-		elif state == 'homing':
+		elif state == 'homing' or state == "movingtostartposition":
 			GPIO.output(7,1)
 			time.sleep(.1)
 			GPIO.output(7,0)
 	except(ValueError, KeyError, TypeError):
 		print "JSON format error"
-	return photoTaken
 
 try:
 	GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
@@ -32,11 +43,10 @@ try:
 	time.sleep(2)
 	GPIO.output(7,0)
 
-	url = 'http://10.140.68.85/command'
+	url = 'http://10.140.68.74/command'
 	params = {'command':'getstatus'}
-	photoTaken = False
 	while(1):
-		photoTaken = checkStatus(url, params, photoTaken)
+		checkStatus(url, params)
 		time.sleep(.5)
 
 except KeyboardInterrupt:
