@@ -2,9 +2,12 @@ import RPi.GPIO as GPIO ## Import GPIO library
 import time ## Import 'time' library. Allows us to use 'sleep'
 import requests
 import json
+import math
 
 layer_count = 0
 layers_per_photo = 4
+fps = 30
+seconds = 20
 photoTaken = False
 
 def checkStatus(url, params):
@@ -35,6 +38,20 @@ def checkStatus(url, params):
 	except(ValueError, KeyError, TypeError):
 		print "JSON format error"
 
+def updateLayersPerPhoto(url, params):
+	global layers_per_photo
+	r = requests.post(url, params)
+	decoded = json.loads(r.text.lower())
+	try:
+		totalLayers = decoded['response']['state']
+		print totalLayers
+		if totalLayers > 0:
+			layers_per_photo = math.ceil(totalLayers / fps / seconds)
+			print "Layers per photo: " + str(layers_per_photo)
+			print "Total photos to be taken: " + str(math.floor(totalLayers/layers_per_photo))
+	except(ValueError, KeyError, TypeError):
+		print "JSON format error"
+
 try:
 	GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
 	GPIO.setup(7, GPIO.OUT) ## Setup GPIO Pin 7 to OUT	
@@ -45,6 +62,7 @@ try:
 
 	url = 'http://10.140.68.74/command'
 	params = {'command':'getstatus'}
+	updateLayersPerPhoto(url, params)
 	while(1):
 		checkStatus(url, params)
 		time.sleep(.5)
