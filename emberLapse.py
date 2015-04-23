@@ -4,13 +4,13 @@ import requests
 import json
 import math
 
-layer_count = 0
-layers_per_photo = 4
 total_layers = 0
 fps = 60
-seconds = 20
+seconds = 10
 photoTaken = False
 photoPin = 7
+layer_count = 0
+layers_per_photo = 4
 
 def checkStatus(url, params):
 	global layer_count, layers_per_photo, photoTaken, total_layers
@@ -29,13 +29,14 @@ def checkStatus(url, params):
 			photoTaken = False
 		elif state == 'homing' or state == "movingtostartposition":
 			takePhoto()
-		elif state == 'home'
+		elif state == 'home':
 			total_layers = 0
 
 	except(ValueError, KeyError, TypeError):
 		print "JSON format error"
 
-def takePhoto()
+def takePhoto():
+	print "PHOTO"
 	GPIO.output(photoPin, 1)
 	time.sleep(.1)
 	GPIO.output(photoPin, 0)
@@ -45,12 +46,17 @@ def updateLayersPerPhoto(url, params):
 	r = requests.post(url, params)
 	decoded = json.loads(r.text.lower())
 	try:
-		total_layers = int(decoded['response']['total_layers'])
+		total_layers = float(decoded['response']['total_layers'])
 		print str(total_layers)
 		if total_layers > 0:
+			print total_layers
+			print fps
+			print seconds
+			print "^the settings"
 			layers_per_photo = math.ceil(total_layers / fps / seconds)
 			print "Layers per photo: " + str(layers_per_photo)
-			print "Total photos to be taken: " + str(math.floor(total_layers/layers_per_photo))
+			if layers_per_photo > 0:
+				print "Total photos to be taken: " + str(math.floor(total_layers/layers_per_photo))
 	except(ValueError, KeyError, TypeError):
 		print "JSON format error"
 
@@ -62,7 +68,7 @@ try:
 	time.sleep(2)
 	GPIO.output(7,0)
 
-	url = 'http://10.140.68.74/command'
+	url = 'http://10.140.69.169/command'
 	params = {'command':'getstatus'}
 	while(1):
 		checkStatus(url, params)
