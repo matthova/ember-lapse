@@ -12,6 +12,8 @@ photoPin = 7
 layer_count = 0
 layers_per_photo = 4
 
+emberIP = '10.140.68.256'
+
 def checkStatus(url, params):
 	global layer_count, layers_per_photo, photoTaken, total_layers
         r = requests.post(url, params)
@@ -62,13 +64,15 @@ def updateLayersPerPhoto(url, params):
 
 try:
 	GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
-	GPIO.setup(7, GPIO.OUT) ## Setup GPIO Pin 7 to OUT	
+	GPIO.setup(photoPin, GPIO.OUT) ## Setup GPIO Pin 7 to OUT	
 
-	GPIO.output(7,1)
+	print('testing output')
+	GPIO.output(photoPin,1)
 	time.sleep(2)
-	GPIO.output(7,0)
+	GPIO.output(photoPin,0)
+	print('shoulda worked')
 
-	url = 'http://10.140.69.169/command'
+	url = 'http://' + emberIP + '/command'
 	params = {'command':'getstatus'}
 	while(1):
 		checkStatus(url, params)
